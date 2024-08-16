@@ -5,7 +5,16 @@ window.initGame = (React, assetsUrl) => {
   const { GLTFLoader } = window.THREE;
 
   const TargetModel = React.memo(({ url, position = [0, 0, 0] }) => {
-    const gltf = useLoader(GLTFLoader, url);
+    const gltf = useLoader(GLTFLoader, url, (loader) => {
+      loader.load(url, 
+        () => {}, 
+        undefined, 
+        (error) => {
+          console.error('Error loading model:', error);
+        }
+      );
+    });
+
     return React.createElement('primitive', { object: gltf.scene.clone(), position });
   });
 
@@ -32,22 +41,22 @@ window.initGame = (React, assetsUrl) => {
     return {
       arrowRef,
       fireArrow,
-      arrowModel: React.createElement('mesh', { ref: arrowRef, position: [0, 0, 0], /* Add geometry and material here */ })
+      arrowModel: React.createElement('mesh', { ref: arrowRef, position: [0, 0, 0], geometry: new THREE.CylinderGeometry(0.1, 0.1, 1), material: new THREE.MeshBasicMaterial({ color: 0x000000 }) })
     };
   }
 
   function Bow() {
     const bowRef = useRef();
     const { camera } = useThree();
-    const { fireArrow } = ArrowModel();
-    
+    const { arrowRef, fireArrow } = ArrowModel();
+
     const handleClick = (event) => {
-      const target = [event.clientX, event.clientY, 0]; // Calculate target position from mouse click
+      const target = [event.clientX / window.innerWidth * 4 - 2, 1, -5]; // Example target position based on click
       fireArrow(target);
     };
 
     return React.createElement('group', { ref: bowRef, onClick: handleClick }, 
-      React.createElement('mesh', { /* Bow model */ })
+      React.createElement('mesh', { /* Bow model here */ })
     );
   }
 
