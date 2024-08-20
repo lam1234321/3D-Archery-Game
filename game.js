@@ -1,10 +1,10 @@
 window.initMazeGame = (React, assetsUrl) => {
-    const { useState, useEffect, useRef, useMemo } = React;
-    const { useLoader, useThree, useFrame } = window.ReactThreeFiber;
+    const { useState, useEffect, useMemo } = React;
+    const { useLoader, useThree } = window.ReactThreeFiber;
     const THREE = window.THREE;
     const { GLTFLoader } = window.THREE;
 
-    const BlockModel = React.memo(({ url, position = [0, 0, 0] }) => {
+    const Model = React.memo(({ url, position = [0, 0, 0] }) => {
         const gltf = useLoader(GLTFLoader, url);
         const copiedScene = useMemo(() => gltf.scene.clone(), [gltf]);
 
@@ -15,30 +15,19 @@ window.initMazeGame = (React, assetsUrl) => {
         return React.createElement('primitive', { object: copiedScene });
     });
 
-    function Maze() {
-        const wallUrl = `${assetsUrl}/wall.glb`;
-        const blocks = [
-            [0, 0, 0], [1, 0, 0], [0, 0, -1], [1, 0, -1], // Sample maze positions
-            // Add more positions here for walls
-        ];
-
-        return (
-            React.createElement(
-                'group',
-                null,
-                blocks.map((pos) => React.createElement(BlockModel, { key: `${pos}`, url: wallUrl, position: pos }))
-            )
-        );
+    function Land() {
+        const landUrl = `${assetsUrl}/land.glb`;
+        return React.createElement(Model, { url: landUrl, position: [0, 0, 0] });
     }
 
     function GoalModel() {
         const goalUrl = `${assetsUrl}/goal.glb`;
-        return React.createElement(BlockModel, { url: goalUrl, position: [2, 0, -2] });
+        return React.createElement(Model, { url: goalUrl, position: [2, 0, -2] });
     }
 
-    function PlayerModel({ position }) {
-        const playerUrl = `${assetsUrl}/player.glb`;
-        return React.createElement(BlockModel, { url: playerUrl, position });
+    function BallModel({ position }) {
+        const ballUrl = `${assetsUrl}/ball.glb`;
+        return React.createElement(Model, { url: ballUrl, position });
     }
 
     function Camera() {
@@ -51,21 +40,21 @@ window.initMazeGame = (React, assetsUrl) => {
     }
 
     function EscapeMazeGame() {
-        const [playerPosition, setPlayerPosition] = useState([0, 0, 0]);
+        const [ballPosition, setBallPosition] = useState([0, 0.5, 0]);
 
         const handleKeyPress = (event) => {
             switch (event.key) {
                 case 'ArrowUp':
-                    setPlayerPosition((pos) => [pos[0], pos[1], pos[2] + 1]);
+                    setBallPosition((pos) => [pos[0], pos[1], pos[2] + 0.1]);
                     break;
                 case 'ArrowDown':
-                    setPlayerPosition((pos) => [pos[0], pos[1], pos[2] - 1]);
+                    setBallPosition((pos) => [pos[0], pos[1], pos[2] - 0.1]);
                     break;
                 case 'ArrowLeft':
-                    setPlayerPosition((pos) => [pos[0] - 1, pos[1], pos[2]]);
+                    setBallPosition((pos) => [pos[0] - 0.1, pos[1], pos[2]]);
                     break;
                 case 'ArrowRight':
-                    setPlayerPosition((pos) => [pos[0] + 1, pos[1], pos[2]]);
+                    setBallPosition((pos) => [pos[0] + 0.1, pos[1], pos[2]]);
                     break;
                 default:
                     break;
@@ -85,9 +74,9 @@ window.initMazeGame = (React, assetsUrl) => {
             React.createElement(Camera),
             React.createElement('ambientLight', { intensity: 0.5 }),
             React.createElement('pointLight', { position: [10, 10, 10] }),
-            React.createElement(Maze),
+            React.createElement(Land),
             React.createElement(GoalModel),
-            React.createElement(PlayerModel, { position: playerPosition })
+            React.createElement(BallModel, { position: ballPosition })
         );
     }
 
