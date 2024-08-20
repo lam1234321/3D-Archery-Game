@@ -1,7 +1,7 @@
 // app.js
 
 const { useRef, useEffect } = React;
-const { Canvas, useFrame } = window.ReactThreeFiber;
+const { Canvas } = window.ReactThreeFiber; // Only import Canvas here
 const THREE = window.THREE;
 
 // Player component
@@ -48,24 +48,29 @@ function Player({ playerRef, walls }) {
         return false;
     };
 
-    useFrame((state) => {
-        if (playerRef.current) {
-            const direction = new THREE.Vector3();
-            const delta = state.clock.getDelta();
+    useEffect(() => {
+        const animate = (state) => {
+            if (playerRef.current) {
+                const direction = new THREE.Vector3();
+                const delta = state.clock.getDelta();
 
-            if (keys.current.w) direction.z -= speed * delta;
-            if (keys.current.s) direction.z += speed * delta;
-            if (keys.current.a) direction.x -= speed * delta;
-            if (keys.current.d) direction.x += speed * delta;
+                if (keys.current.w) direction.z -= speed * delta;
+                if (keys.current.s) direction.z += speed * delta;
+                if (keys.current.a) direction.x -= speed * delta;
+                if (keys.current.d) direction.x += speed * delta;
 
-            direction.normalize();
-            const nextPosition = playerRef.current.position.clone().add(direction);
+                direction.normalize();
+                const nextPosition = playerRef.current.position.clone().add(direction);
 
-            if (!checkCollision(nextPosition)) {
-                playerRef.current.position.copy(nextPosition);
+                if (!checkCollision(nextPosition)) {
+                    playerRef.current.position.copy(nextPosition);
+                }
             }
-        }
-    });
+            requestAnimationFrame(() => animate(state));
+        };
+
+        animate({ clock: new THREE.Clock() });
+    }, [playerRef, walls]);
 
     return React.createElement('mesh', { ref: playerRef, position: [1, 0.5, -1] },
         React.createElement('boxGeometry', { args: [0.5, 1, 0.5] }),
@@ -76,15 +81,16 @@ function Player({ playerRef, walls }) {
 // RollingBall component
 function RollingBall() {
     const ballRef = useRef();
-    const loader = new THREE.OBJLoader(); // Use OBJLoader for .obj files
+    const loader = new THREE.OBJLoader();
 
     useEffect(() => {
         loader.load(
-            'assets/ball.obj', // Updated path to ball.obj
+            'assets/ball.obj',
             (object) => {
                 ballRef.current = object;
                 ballRef.current.position.set(5, 0.5, -5);
-                window.scene.add(ballRef.current); // Ensure you have a scene set up
+                window.scene.add(ballRef.current);
+                animate(); // Start animation loop
             },
             undefined,
             (error) => {
@@ -93,12 +99,13 @@ function RollingBall() {
         );
     }, [loader]);
 
-    useFrame(() => {
+    const animate = () => {
         if (ballRef.current) {
-            ballRef.current.rotation.x += 0.05; // Simulating rolling
+            ballRef.current.rotation.x += 0.05;
             ballRef.current.rotation.y += 0.05;
         }
-    });
+        requestAnimationFrame(animate); // Request next frame
+    };
 
     return null; // No additional JSX for this component
 }
@@ -106,7 +113,7 @@ function RollingBall() {
 // Main Game component
 function GameScene() {
     const playerRef = useRef();
-    const walls = [/* Define your wall positions here */]; // Specify your wall data
+    const walls = [/* Define your wall positions here */];
 
     return React.createElement(
         React.Fragment,
