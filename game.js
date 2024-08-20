@@ -1,7 +1,6 @@
 window.initGame = (React, assetsUrl) => {
   const { useRef, useEffect } = React;
-  const { useFrame, useThree } = window.ReactThreeFiber;
-  const { Canvas } = window.ReactThreeFiber;
+  const { Canvas, useFrame, useThree } = window.ReactThreeFiber;
   const { useGLTF } = window.Drei; // Import useGLTF from @react-three/drei
   const THREE = window.THREE;
 
@@ -91,7 +90,8 @@ window.initGame = (React, assetsUrl) => {
 
   function createMaze() {
     const mazeLayout = [
-      // ... (your existing maze layout) ...
+      // Define your maze layout here as a 2D array
+      // Example: [ [0, 1], [1, 0] ]
     ];
 
     const walls = [];
@@ -103,7 +103,6 @@ window.initGame = (React, assetsUrl) => {
         if (cell === 1) {
           const wallPosition = new THREE.Vector3(colIndex, wallHeight / 2, -rowIndex);
           walls.push(wallPosition);
-          // Wall mesh creation (optional, since walls are handled later)
         }
       });
     });
@@ -136,4 +135,4 @@ window.initGame = (React, assetsUrl) => {
   return GameScene;
 };
 
-console.log('Collision detection script loaded');
+console.log('Game initialized.');
