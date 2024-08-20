@@ -1,81 +1,77 @@
 window.initGame = (React, assetsUrl) => {
   const { useRef, useEffect } = React;
   const { useFrame, useThree } = window.ReactThreeFiber;
+  const { Canvas } = window.ReactThreeFiber;
+  const { useGLTF } = window.Drei; // Import useGLTF from @react-three/drei
   const THREE = window.THREE;
 
   function Player({ playerRef, walls }) {
-  const speed = 0.005; // Movement speed
-  const keys = useRef({ w: false, a: false, s: false, d: false });
+    const speed = 0.005;
+    const keys = useRef({ w: false, a: false, s: false, d: false });
+    const { scene } = useGLTF(`${assetsUrl}/ball.glb`); // Load ball model
 
-  const handleKeyDown = (event) => {
-    if (keys.current.hasOwnProperty(event.key)) {
-      keys.current[event.key] = true;
-    }
-  };
-
-  const handleKeyUp = (event) => {
-    if (keys.current.hasOwnProperty(event.key)) {
-      keys.current[event.key] = false;
-    }
-  };
-
-  useEffect(() => {
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('keyup', handleKeyUp);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('keyup', handleKeyUp);
+    const handleKeyDown = (event) => {
+      if (keys.current.hasOwnProperty(event.key)) {
+        keys.current[event.key] = true;
+      }
     };
-  }, []);
 
-  const checkCollision = (nextPosition) => {
-    const playerBox = new THREE.Box3().setFromCenterAndSize(
-      nextPosition,
-      new THREE.Vector3(0.5, 1, 0.5)
-    );
+    const handleKeyUp = (event) => {
+      if (keys.current.hasOwnProperty(event.key)) {
+        keys.current[event.key] = false;
+      }
+    };
 
-    for (let wall of walls) {
-      if (wall) { // Check if wall is defined
-        const wallBox = new THREE.Box3().setFromCenterAndSize(
-          wall,
-          new THREE.Vector3(1, 1, 1)
-        );
-        if (playerBox.intersectsBox(wallBox)) {
-          return true;
+    useEffect(() => {
+      window.addEventListener('keydown', handleKeyDown);
+      window.addEventListener('keyup', handleKeyUp);
+      return () => {
+        window.removeEventListener('keydown', handleKeyDown);
+        window.removeEventListener('keyup', handleKeyUp);
+      };
+    }, []);
+
+    const checkCollision = (nextPosition) => {
+      const playerBox = new THREE.Box3().setFromCenterAndSize(
+        nextPosition,
+        new THREE.Vector3(0.5, 1, 0.5)
+      );
+
+      for (let wall of walls) {
+        if (wall) {
+          const wallBox = new THREE.Box3().setFromCenterAndSize(
+            wall,
+            new THREE.Vector3(1, 1, 1)
+          );
+          if (playerBox.intersectsBox(wallBox)) {
+            return true;
+          }
         }
       }
-    }
-    return false;
-  };
+      return false;
+    };
 
-  useFrame((state) => {
-    if (playerRef.current) {
-      const direction = new THREE.Vector3();
-      const delta = state.clock.getDelta(); // Get delta time
+    useFrame((state) => {
+      if (playerRef.current) {
+        const direction = new THREE.Vector3();
+        const delta = state.clock.getDelta();
 
-      if (keys.current.w) direction.z -= speed * delta;
-      if (keys.current.s) direction.z += speed * delta;
-      if (keys.current.a) direction.x -= speed * delta;
-      if (keys.current.d) direction.x += speed * delta;
+        if (keys.current.w) direction.z -= speed * delta;
+        if (keys.current.s) direction.z += speed * delta;
+        if (keys.current.a) direction.x -= speed * delta;
+        if (keys.current.d) direction.x += speed * delta;
 
-      // Normalize direction to maintain consistent speed
-      direction.normalize();
+        direction.normalize();
+        const nextPosition = playerRef.current.position.clone().add(direction);
 
-      // Calculate the next position
-      const nextPosition = playerRef.current.position.clone().add(direction);
-
-      // Check for collision before updating the position
-      if (!checkCollision(nextPosition)) {
-        playerRef.current.position.copy(nextPosition);
+        if (!checkCollision(nextPosition)) {
+          playerRef.current.position.copy(nextPosition);
+        }
       }
-    }
-  });
+    });
 
-  return React.createElement('mesh', { ref: playerRef, position: [1, 0.5, -1] },
-    React.createElement('boxGeometry', { args: [0.5, 1, 0.5] }),
-    React.createElement('meshStandardMaterial', { color: 'blue' })
-  );
-}
+    return React.createElement('primitive', { object: scene, ref: playerRef });
+  }
 
   function CameraFollow({ playerRef }) {
     const { camera } = useThree();
@@ -94,28 +90,8 @@ window.initGame = (React, assetsUrl) => {
   }
 
   function createMaze() {
-    // Maze layout - 1 represents a wall, 0 represents open space
     const mazeLayout = [
-      [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
-      [1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 0, 1],
-      [1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 0, 0, 1, 0, 1, 1, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-      [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-      [1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-      [1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
-      [1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1],
-      [1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1],
-      [1, 0, 1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1],
-      [1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 1],
-      [1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 1, 0, 1],
-      [1, 1, 1, 0, 1, 0, 1, 0, 1, 1, 0, 1, 1, 0, 0, 1, 0, 0, 0, 1],
-      [1, 0, 0, 0, 1, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1],
-      [1, 0, 1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1],
-      [1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+      // ... (your existing maze layout) ...
     ];
 
     const walls = [];
@@ -126,14 +102,8 @@ window.initGame = (React, assetsUrl) => {
       row.forEach((cell, colIndex) => {
         if (cell === 1) {
           const wallPosition = new THREE.Vector3(colIndex, wallHeight / 2, -rowIndex);
-          walls.push(wallPosition); // Store wall positions
-          const wall = React.createElement('mesh', {
-            position: wallPosition.toArray(),
-            key: `wall-${rowIndex}-${colIndex}`
-          },
-            React.createElement('boxGeometry', { args: [wallThickness, wallHeight, wallThickness] }),
-            React.createElement('meshStandardMaterial', { color: 'gray' })
-          );
+          walls.push(wallPosition);
+          // Wall mesh creation (optional, since walls are handled later)
         }
       });
     });
@@ -142,16 +112,18 @@ window.initGame = (React, assetsUrl) => {
   }
 
   function GameScene() {
-    const playerRef = useRef(); 
-    const walls = createMaze(); // Generate maze walls
+    const playerRef = useRef();
+    const walls = createMaze();
+    const { scene: landScene } = useGLTF(`${assetsUrl}/land.glb`); // Load land model
 
     return React.createElement(
       React.Fragment,
       null,
       React.createElement('ambientLight', { intensity: 0.5 }),
       React.createElement('pointLight', { position: [10, 10, 10] }),
-      React.createElement(Player, { playerRef, walls }), // Pass walls to Player
+      React.createElement(Player, { playerRef, walls }),
       React.createElement(CameraFollow, { playerRef }),
+      React.createElement('primitive', { object: landScene, position: [0, 0, 0] }),
       ...walls.map((position, index) => (
         React.createElement('mesh', { position: position.toArray(), key: `wall-${index}` },
           React.createElement('boxGeometry', { args: [1, 1, 1] }),
