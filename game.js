@@ -1,22 +1,22 @@
 window.initGame = (React, assetsUrl) => {
   const { useRef, useEffect } = React;
   const { Canvas, useFrame, useThree } = window.ReactThreeFiber;
-  const { useGLTF } = window.Drei; // Import useGLTF from @react-three/drei
+  const { useOBJ } = window.Drei; // Import for OBJ loader
   const THREE = window.THREE;
 
   function Player({ playerRef, walls }) {
     const speed = 0.005;
     const keys = useRef({ w: false, a: false, s: false, d: false });
-    const { scene } = useGLTF(`${assetsUrl}/ball.glb`); // Load ball model
+    const { scene } = useOBJ(`${assetsUrl}/ball.obj`); // Load ball model
 
     const handleKeyDown = (event) => {
-      if (keys.current.hasOwnProperty(event.key)) {
+      if (keys.current[event.key] !== undefined) {
         keys.current[event.key] = true;
       }
     };
 
     const handleKeyUp = (event) => {
-      if (keys.current.hasOwnProperty(event.key)) {
+      if (keys.current[event.key] !== undefined) {
         keys.current[event.key] = false;
       }
     };
@@ -90,13 +90,11 @@ window.initGame = (React, assetsUrl) => {
 
   function createMaze() {
     const mazeLayout = [
-      // Define your maze layout here as a 2D array
-      // Example: [ [0, 1], [1, 0] ]
+      // Define your maze layout here
     ];
 
     const walls = [];
     const wallHeight = 1;
-    const wallThickness = 1;
 
     mazeLayout.forEach((row, rowIndex) => {
       row.forEach((cell, colIndex) => {
@@ -113,7 +111,7 @@ window.initGame = (React, assetsUrl) => {
   function GameScene() {
     const playerRef = useRef();
     const walls = createMaze();
-    const { scene: landScene } = useGLTF(`${assetsUrl}/land.glb`); // Load land model
+    const { scene: landScene } = useOBJ(`${assetsUrl}/land.obj`); // Load land model
 
     return React.createElement(
       React.Fragment,
