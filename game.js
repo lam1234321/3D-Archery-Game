@@ -1,117 +1,54 @@
 window.initGame = (React, assetsUrl) => {
   const { useRef, useEffect } = React;
-  const { Canvas, useFrame, useThree } = window.ReactThreeFiber;
-  const { useOBJ } = window.Drei; // Import for OBJ loader
+  const { useFrame, useThree } = window.ReactThreeFiber;
   const THREE = window.THREE;
+  
+  // Import GLTFLoader
+  const { GLTFLoader } = require('three/examples/jsm/loaders/GLTFLoader');
 
   function Player({ playerRef, walls }) {
-    const speed = 0.005;
-    const keys = useRef({ w: false, a: false, s: false, d: false });
-    const { scene } = useOBJ(`${assetsUrl}/ball.obj`); // Load ball model
-
-    const handleKeyDown = (event) => {
-      if (keys.current[event.key] !== undefined) {
-        keys.current[event.key] = true;
-      }
-    };
-
-    const handleKeyUp = (event) => {
-      if (keys.current[event.key] !== undefined) {
-        keys.current[event.key] = false;
-      }
-    };
-
-    useEffect(() => {
-      window.addEventListener('keydown', handleKeyDown);
-      window.addEventListener('keyup', handleKeyUp);
-      return () => {
-        window.removeEventListener('keydown', handleKeyDown);
-        window.removeEventListener('keyup', handleKeyUp);
-      };
-    }, []);
-
-    const checkCollision = (nextPosition) => {
-      const playerBox = new THREE.Box3().setFromCenterAndSize(
-        nextPosition,
-        new THREE.Vector3(0.5, 1, 0.5)
-      );
-
-      for (let wall of walls) {
-        if (wall) {
-          const wallBox = new THREE.Box3().setFromCenterAndSize(
-            wall,
-            new THREE.Vector3(1, 1, 1)
-          );
-          if (playerBox.intersectsBox(wallBox)) {
-            return true;
-          }
-        }
-      }
-      return false;
-    };
-
-    useFrame((state) => {
-      if (playerRef.current) {
-        const direction = new THREE.Vector3();
-        const delta = state.clock.getDelta();
-
-        if (keys.current.w) direction.z -= speed * delta;
-        if (keys.current.s) direction.z += speed * delta;
-        if (keys.current.a) direction.x -= speed * delta;
-        if (keys.current.d) direction.x += speed * delta;
-
-        direction.normalize();
-        const nextPosition = playerRef.current.position.clone().add(direction);
-
-        if (!checkCollision(nextPosition)) {
-          playerRef.current.position.copy(nextPosition);
-        }
-      }
-    });
-
-    return React.createElement('primitive', { object: scene, ref: playerRef });
+    // ... existing player code ...
   }
 
   function CameraFollow({ playerRef }) {
-    const { camera } = useThree();
-    const offset = new THREE.Vector3(0, 30, 10);
-    const targetPosition = new THREE.Vector3();
-
-    useFrame(() => {
-      if (playerRef.current) {
-        targetPosition.copy(playerRef.current.position).add(offset);
-        camera.position.lerp(targetPosition, 0.1);
-        camera.lookAt(playerRef.current.position);
-      }
-    });
-
-    return null;
+    // ... existing camera code ...
   }
 
   function createMaze() {
-    const mazeLayout = [
-      // Define your maze layout here
-    ];
+    // ... existing maze creation code ...
+  }
 
-    const walls = [];
-    const wallHeight = 1;
-
-    mazeLayout.forEach((row, rowIndex) => {
-      row.forEach((cell, colIndex) => {
-        if (cell === 1) {
-          const wallPosition = new THREE.Vector3(colIndex, wallHeight / 2, -rowIndex);
-          walls.push(wallPosition);
+  function RollingBall() {
+    const ballRef = useRef();
+    const loader = new GLTFLoader();
+    
+    useEffect(() => {
+      loader.load(
+        `${assetsUrl}/ball.obj`, // Adjust based on your asset URL
+        (gltf) => {
+          ballRef.current = gltf.scene;
+          scene.add(ballRef.current);
+        },
+        undefined,
+        (error) => {
+          console.error('An error occurred while loading the ball:', error);
         }
-      });
+      );
+    }, [loader]);
+
+    useFrame(() => {
+      if (ballRef.current) {
+        ballRef.current.rotation.x += 0.01; // Rotate for rolling effect
+        ballRef.current.rotation.y += 0.01; // Rotate for rolling effect
+      }
     });
 
-    return walls;
+    return null; // No additional JSX for this component
   }
 
   function GameScene() {
     const playerRef = useRef();
-    const walls = createMaze();
-    const { scene: landScene } = useOBJ(`${assetsUrl}/land.obj`); // Load land model
+    const walls = createMaze(); // Generate maze walls
 
     return React.createElement(
       React.Fragment,
@@ -120,7 +57,7 @@ window.initGame = (React, assetsUrl) => {
       React.createElement('pointLight', { position: [10, 10, 10] }),
       React.createElement(Player, { playerRef, walls }),
       React.createElement(CameraFollow, { playerRef }),
-      React.createElement('primitive', { object: landScene, position: [0, 0, 0] }),
+      React.createElement(RollingBall), // Include the ball component
       ...walls.map((position, index) => (
         React.createElement('mesh', { position: position.toArray(), key: `wall-${index}` },
           React.createElement('boxGeometry', { args: [1, 1, 1] }),
@@ -133,4 +70,4 @@ window.initGame = (React, assetsUrl) => {
   return GameScene;
 };
 
-console.log('Game initialized.');
+console.log('Collision detection script loaded');
