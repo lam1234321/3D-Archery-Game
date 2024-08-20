@@ -1,83 +1,97 @@
-window.initGame = (React, assetsUrl) => {
-  const { useState, useEffect, useRef, Suspense, useMemo } = React;
-  const { useFrame, useLoader, useThree } = window.ReactThreeFiber;
-  const THREE = window.THREE;
-  const { GLTFLoader } = window.THREE;
+window.initMazeGame = (React, assetsUrl) => {
+    const { useState, useEffect, useRef, useMemo } = React;
+    const { useLoader, useThree, useFrame } = window.ReactThreeFiber;
+    const THREE = window.THREE;
+    const { GLTFLoader } = window.THREE;
 
-  const TargetModel = React.memo(({ url, position = [0, 0, 0] }) => {
-    const gltf = useLoader(GLTFLoader, url, (loader) => {
-      loader.load(url, 
-        () => {}, 
-        undefined, 
-        (error) => {
-          console.error('Error loading model:', error);
-        }
-      );
+    const BlockModel = React.memo(({ url, position = [0, 0, 0] }) => {
+        const gltf = useLoader(GLTFLoader, url);
+        const copiedScene = useMemo(() => gltf.scene.clone(), [gltf]);
+
+        useEffect(() => {
+            copiedScene.position.set(...position);
+        }, [copiedScene, position]);
+
+        return React.createElement('primitive', { object: copiedScene });
     });
 
-    return React.createElement('primitive', { object: gltf.scene.clone(), position });
-  });
+    function Maze() {
+        const wallUrl = `${assetsUrl}/wall.glb`;
+        const blocks = [
+            [0, 0, 0], [1, 0, 0], [0, 0, -1], [1, 0, -1], // Sample maze positions
+            // Add more positions here for walls
+        ];
 
-  function ArrowModel() {
-    const arrowRef = useRef();
-    const [isFired, setIsFired] = useState(false);
-    const [targetPosition, setTargetPosition] = useState([0, 0, 0]);
+        return (
+            React.createElement(
+                'group',
+                null,
+                blocks.map((pos) => React.createElement(BlockModel, { key: `${pos}`, url: wallUrl, position: pos }))
+            )
+        );
+    }
 
-    useFrame(() => {
-      if (isFired && arrowRef.current) {
-        arrowRef.current.position.lerp(new THREE.Vector3(...targetPosition), 0.1);
-        if (arrowRef.current.position.distanceTo(new THREE.Vector3(...targetPosition)) < 0.1) {
-          setIsFired(false);
-          arrowRef.current.position.set(0, 0, 0); // Reset position
-        }
-      }
-    });
+    function GoalModel() {
+        const goalUrl = `${assetsUrl}/goal.glb`;
+        return React.createElement(BlockModel, { url: goalUrl, position: [2, 0, -2] });
+    }
 
-    const fireArrow = (target) => {
-      setTargetPosition(target);
-      setIsFired(true);
-    };
+    function PlayerModel({ position }) {
+        const playerUrl = `${assetsUrl}/player.glb`;
+        return React.createElement(BlockModel, { url: playerUrl, position });
+    }
 
-    return {
-      arrowRef,
-      fireArrow,
-      arrowModel: React.createElement('mesh', { ref: arrowRef, position: [0, 0, 0], geometry: new THREE.CylinderGeometry(0.1, 0.1, 1), material: new THREE.MeshBasicMaterial({ color: 0x000000 }) })
-    };
-  }
+    function Camera() {
+        const { camera } = useThree();
+        useEffect(() => {
+            camera.position.set(5, 5, 5);
+            camera.lookAt(0, 0, 0);
+        }, [camera]);
+        return null;
+    }
 
-  function Bow() {
-    const bowRef = useRef();
-    const { camera } = useThree();
-    const { arrowRef, fireArrow } = ArrowModel();
+    function EscapeMazeGame() {
+        const [playerPosition, setPlayerPosition] = useState([0, 0, 0]);
 
-    const handleClick = (event) => {
-      const target = [event.clientX / window.innerWidth * 4 - 2, 1, -5]; // Example target position based on click
-      fireArrow(target);
-    };
+        const handleKeyPress = (event) => {
+            switch (event.key) {
+                case 'ArrowUp':
+                    setPlayerPosition((pos) => [pos[0], pos[1], pos[2] + 1]);
+                    break;
+                case 'ArrowDown':
+                    setPlayerPosition((pos) => [pos[0], pos[1], pos[2] - 1]);
+                    break;
+                case 'ArrowLeft':
+                    setPlayerPosition((pos) => [pos[0] - 1, pos[1], pos[2]]);
+                    break;
+                case 'ArrowRight':
+                    setPlayerPosition((pos) => [pos[0] + 1, pos[1], pos[2]]);
+                    break;
+                default:
+                    break;
+            }
+        };
 
-    return React.createElement('group', { ref: bowRef, onClick: handleClick }, 
-      React.createElement('mesh', { /* Bow model here */ })
-    );
-  }
+        useEffect(() => {
+            window.addEventListener('keydown', handleKeyPress);
+            return () => {
+                window.removeEventListener('keydown', handleKeyPress);
+            };
+        }, []);
 
-  function ArcheryGame() {
-    const targetPositions = [
-      [-2, 1, -5], [0, 1, -5], [2, 1, -5]
-    ];
-    
-    const targets = targetPositions.map((pos, index) =>
-      React.createElement(TargetModel, { key: index, url: `${assetsUrl}/target.glb`, position: pos })
-    );
+        return React.createElement(
+            'group',
+            null,
+            React.createElement(Camera),
+            React.createElement('ambientLight', { intensity: 0.5 }),
+            React.createElement('pointLight', { position: [10, 10, 10] }),
+            React.createElement(Maze),
+            React.createElement(GoalModel),
+            React.createElement(PlayerModel, { position: playerPosition })
+        );
+    }
 
-    return React.createElement(
-      React.Fragment,
-      null,
-      targets,
-      React.createElement(Bow)
-    );
-  }
-
-  return ArcheryGame;
+    return EscapeMazeGame;
 };
 
-console.log('3D Archery game script loaded');
+console.log('Escape the Maze game script loaded');
