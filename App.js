@@ -5,6 +5,7 @@ window.initGame = (React, assetsUrl) => {
     // Define the component for a puzzle element
     return (
       // Return the JSX for the puzzle element
+      <div>Placeholder for Puzzle Element</div>
     );
   }
 
@@ -17,6 +18,7 @@ window.initGame = (React, assetsUrl) => {
         <ambientLight intensity={0.5} />
         <pointLight position={[10, 10, 10]} />
         {/* Render puzzle elements based on game logic */}
+        <PuzzleElement />
       </React.Fragment>
     );
   }
