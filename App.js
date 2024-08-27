@@ -1,27 +1,33 @@
+import { Html } from 'drei';
+
 window.initGame = (React, assetsUrl) => {
-  // Import necessary React and Three.js components
+  // Import necessary React and R3F components
 
   function PuzzleElement(props) {
     // Define the component for a puzzle element
-    return React.createElement('div', null, 'Placeholder for Puzzle Element');
+    return (
+      <Html>
+        <div>Placeholder for Puzzle Element</div>
+      </Html>
+    );
   }
 
   function Camera() {
     // Placeholder for the Camera component
-    return React.createElement('div', null, 'Camera Placeholder');
+    return <div>Camera Placeholder</div>;
   }
 
   function PuzzleGame() {
     // Define state and logic for the puzzle game
 
-    return React.createElement(
-      React.Fragment,
-      null,
-      React.createElement(Camera, null),
-      React.createElement('ambientLight', { intensity: 0.5 }),
-      React.createElement('pointLight', { position: [10, 10, 10] }),
-      // Render puzzle elements based on game logic
-      React.createElement(PuzzleElement)
+    return (
+      <React.Fragment>
+        <Camera />
+        <ambientLight intensity={0.5} />
+        <pointLight position={[10, 10, 10]} />
+        {/* Render puzzle elements based on game logic */}
+        <PuzzleElement />
+      </React.Fragment>
     );
   }
 
