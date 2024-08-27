@@ -1,3 +1,4 @@
+import React from 'react';
 import { Html } from 'drei';
 
 window.initGame = (React, assetsUrl) => {
